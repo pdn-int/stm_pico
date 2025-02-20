@@ -48,16 +48,16 @@ bool lsm6dsl_init(void)
 	
 	// WHO_AM_I (0x0F)
 	deviceID = lsm6dsl_get_who_am_i();
-//	L_DEBUG("LSM6DSL Device ID = %02X", deviceID);
+//	printf("LSM6DSL Device ID = %02X\r\n", deviceID);
 	if(deviceID != LSM6DSL_WHO_AMI_I) {
-		L_ERROR("Incorrect LSM6DSL Device ID [%02X], retrying", deviceID);
+//		printf("Incorrect LSM6DSL Device ID [%02X], retrying\r\n", deviceID);
     
     // try reading WHO_AM_I again
     osDelay(10);
     deviceID = lsm6dsl_get_who_am_i();
     if(deviceID != LSM6DSL_WHO_AMI_I) {
 #if defined(picoSTM32H753) || defined(PICOSTM_COMBO) || defined(PICOSTM_COMBO_REV_B)
-      L_ERROR("Incorrect LSM6DSL Device ID [%02X], changing SPI mode", deviceID);
+//      printf("Incorrect LSM6DSL Device ID [%02X], changing SPI mode\r\n", deviceID);
       
       // try a different SPI mode
       HAL_SPI_DeInit(&hspi5);
@@ -70,7 +70,7 @@ bool lsm6dsl_init(void)
       deviceID = lsm6dsl_get_who_am_i();
       if(deviceID != LSM6DSL_WHO_AMI_I) {
 #endif
-        L_ERROR("Incorrect LSM6DSL Device ID [%02X], SPI5 failed to initialize", deviceID);
+        printf("Incorrect LSM6DSL Device ID [%02X], SPI5 failed to initialize\r\n", deviceID);
         return false;
 
 #if defined(picoSTM32H753) || defined(PICOSTM_COMBO) || defined(PICOSTM_COMBO_REV_B)
@@ -104,7 +104,7 @@ bool lsm6dsl_init(void)
 
   // Set interrupts
   if(ic3.xlg_int_enabled) {
-    L_INFO("Accelerometer/Gyroscope interrupt enabled. Setting configurations for interrupt...");
+    printf("Accelerometer/Gyroscope interrupt enabled. Setting configurations for interrupt...\r\n");
     
     // Configure GPIO for external interrupt
     __HAL_RCC_GPIOI_CLK_ENABLE();
@@ -128,7 +128,7 @@ bool lsm6dsl_init(void)
   // get calibration offsets
 //  offset = lsm6dsl_get_offset_xl_g();
   
-	L_CRIT("Accelerometer/Gyroscope initialization completed");
+	printf("Accelerometer/Gyroscope initialization completed\r\n");
 	return true;
 }
 
@@ -138,8 +138,9 @@ bool lsm6dsl_init(void)
 uint8_t lsm6dsl_get_who_am_i(void)
 {
 	uint8_t rData;
+//	printf("&rData = %p\r\n",&rData);
 	lsm6dsl_read(LSM6DSL_WHO_AM_I_ADDR, &rData, 1);
-	
+//	printf("rData = %X\r\n", rData);
 	return rData;
 }
 /*****************************************************************
@@ -174,7 +175,7 @@ float lsm6dsl_get_out_temp(void)
 {
   
   if (!(lsm6dsl_get_status_reg()&0x04)) {
-		L_DEBUG("Temperature old data");
+//		L_DEBUG("Temperature old data");
 		return false;
 	}
     
@@ -218,7 +219,7 @@ bool lsm6dsl_get_out_g(COT_DATA *data)
 	data->xlgyr.gx = (pData[2] * sensitivity_g) - offset.gx;
 	data->xlgyr.gy = (pData[1] * sensitivity_g) - offset.gy;
 	data->xlgyr.gz = (pData[0] * sensitivity_g) - offset.gz;
-  L_DEBUG("gyro = %.2f, %.2f, %.2f", data->xlgyr.gx, data->xlgyr.gy, data->xlgyr.gz);
+//  L_DEBUG("gyro = %.2f, %.2f, %.2f", data->xlgyr.gx, data->xlgyr.gy, data->xlgyr.gz);
   
 	return true;
 }
@@ -234,7 +235,7 @@ bool lsm6dsl_get_out_xl(COT_DATA *data)
 	// Read Status
 	// If STATUS_REG[XLDA] = 0, then do not update
 	if (!(lsm6dsl_get_status_reg()&0x01)) {
-		L_DEBUG("Accelerometer old data");
+//		L_DEBUG("Accelerometer old data");
 		return false;
 	}
 	
@@ -247,7 +248,7 @@ bool lsm6dsl_get_out_xl(COT_DATA *data)
 	data->xlgyr.xlx = (pData[2] * sensitivity_xl) - offset.xlx;
 	data->xlgyr.xly = (pData[1] * sensitivity_xl) - offset.xly;
 	data->xlgyr.xlz = (pData[0] * sensitivity_xl) - offset.xlz;
-	L_DEBUG("accel = %.2f, %.2f, %.2f", data->xlgyr.xlx, data->xlgyr.xly, data->xlgyr.xlz);
+//	L_DEBUG("accel = %.2f, %.2f, %.2f", data->xlgyr.xlx, data->xlgyr.xly, data->xlgyr.xlz);
   
 	return true;
 }
@@ -418,7 +419,7 @@ void lsm6dsl_inact_recog_int(uint8_t duration, uint8_t threshold)
 	durValue = duration * 512 / odr_xl[LSM6DSL_ODR_XL];
 	thresValue = threshold * fs_xl[LSM6DSL_FS_XL] / 64;
 	
-	L_TRACE("Inactivity/Activity Recognition Interrupt Activated (thres = %.4f, dur = %.2f)", thresValue, durValue);
+//	L_TRACE("Inactivity/Activity Recognition Interrupt Activated (thres = %.4f, dur = %.2f)", thresValue, durValue);
 
 	// Set wake_up duration (in lsm6dsl_wake_up_int)
 //	lsm6dsl_read(LSM6DSL_WAKE_UP_DUR_ADDR, &data, 1);
@@ -704,11 +705,11 @@ void lsm6dsl_sw_reset_boot(bool reset_boot)
 	// Set BOOT or SW_RESET bit in CTRL3_C register
 	lsm6dsl_read(LSM6DSL_CTRL3_C_ADDR, &data, 1);
 	if(reset_boot){
-		L_TRACE("LSM6DSL Reboot");
+//		L_TRACE("LSM6DSL Reboot");
 		data = 0x14;
 		delay = 15; // 15ms wait
 	} else {
-		L_TRACE("LSM6DSL SW Reset");
+//		L_TRACE("LSM6DSL SW Reset");
 		data = 0x05;
 		delay = 1; // 50us wait or check CRTL3_C[SW_RESET] if retuned to 0
 	}
@@ -811,12 +812,12 @@ void lsm6dsl_write(uint8_t reg, uint8_t *pData, uint8_t len)
 	
 #if defined(STM32_UMOTE2) // I2C
 	if(HAL_I2C_Master_Transmit(&lsm6dsl_i2c, LSM6DSL_I2C_ADDR, wData, len+1, 10) != HAL_OK) {
-    L_ERROR("I2C XLG Transmit error...");
+    printf("I2C XLG Transmit error...\r\n");
   }
 #elif defined(picoSTM32H753) || defined(PICOSTM_COMBO) || defined(PICOSTM_COMBO_REV_B) // SPI
   HAL_GPIO_WritePin(LSM6DSL_NSS_PORT, LSM6DSL_NSS_PIN, GPIO_PIN_RESET); // Pull CS
   if(HAL_SPI_Transmit(&lsm6dsl_spi, wData, len+1, 100) != HAL_OK) {
-    L_ERROR("SPI XLG Transmit error...");
+    printf("SPI XLG Transmit error...\r\n");
   }
   HAL_GPIO_WritePin(LSM6DSL_NSS_PORT, LSM6DSL_NSS_PIN, GPIO_PIN_SET); // De-assert CS
 #endif
@@ -825,19 +826,28 @@ void lsm6dsl_write(uint8_t reg, uint8_t *pData, uint8_t len)
 
 void lsm6dsl_read(uint8_t reg, uint8_t *pData, uint8_t len)
 {
+
 #if defined(STM32_UMOTE2) // I2C
 	if(HAL_I2C_Mem_Read(&lsm6dsl_i2c, LSM6DSL_I2C_ADDR, reg, 1, pData, len, 10) != HAL_OK) {
-      L_ERROR("I2C XLG Receiver error");
+      printf("I2C XLG Receiver error\r\n");
   }
 #elif defined(picoSTM32H753) || defined(PICOSTM_COMBO) || defined(PICOSTM_COMBO_REV_B) // SPI
   // bit 8 is R/W where R = 1 and W = 0
   uint8_t wData = 0x80 | reg;
+//  printf("wData = %4X\r\n", wData);
+
   HAL_GPIO_WritePin(LSM6DSL_NSS_PORT, LSM6DSL_NSS_PIN, GPIO_PIN_RESET); // Pull CS
-  osDelay(1);
-  HAL_SPI_Transmit(&lsm6dsl_spi, &wData, 1, 100);
-  if(HAL_SPI_Receive(&lsm6dsl_spi, pData, len, 100) != HAL_OK) {
-      L_ERROR("SPI XLG Receiver error");
+//  HAL_GPIO_WritePin(GPIOK, GPIO_PIN_1, GPIO_PIN_RESET);
+  osDelay(10);
+  if(HAL_SPI_Transmit(&lsm6dsl_spi, &wData, 1, 100) != HAL_OK){
+	  printf("SPI XLG Transmit error\r\n");
   }
+  if(HAL_SPI_Receive(&lsm6dsl_spi, pData, len, 100) != HAL_OK) {
+      printf("SPI XLG Receiver error\r\n");
+  }
+//  printf("pData = %4X\r\n", *pData);
   HAL_GPIO_WritePin(LSM6DSL_NSS_PORT, LSM6DSL_NSS_PIN, GPIO_PIN_SET); // De-assert CS
+//  HAL_GPIO_WritePin(GPIOK, GPIO_PIN_1, GPIO_PIN_SET);
+
 #endif
 }

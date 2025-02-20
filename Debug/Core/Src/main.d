@@ -34,7 +34,7 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Core/Src/daemon.h ../Core/Src/ic3definitions.h \
  ../Core/Src/cotfactory.h ../Core/Src/logger.h \
  ../Core/Src/apds9250_light.h ../Core/Src/ms8607_pth.h \
- ../Core/Src/max1704x_fuel_gauge.h
+ ../Core/Src/max1704x_fuel_gauge.h ../Core/Src/lsm6dsl_accel_gyro.h
 ../Core/Inc/main.h:
 ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal.h:
 ../Core/Inc/stm32h7xx_hal_conf.h:
@@ -75,3 +75,4 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Core/Src/apds9250_light.h:
 ../Core/Src/ms8607_pth.h:
 ../Core/Src/max1704x_fuel_gauge.h:
+../Core/Src/lsm6dsl_accel_gyro.h:

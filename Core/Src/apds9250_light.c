@@ -89,7 +89,7 @@ bool apds9250_init(void)
 	// Set CS Mode to RGB and enable Light Sensor
   apds9250_set_main_ctrl(0, ALL_RGB_IR_COMP_ACTIVATED, LS_ACTIVE);
 
-	//L_INFO("Light Sensor initialization completed");
+	printf("Light Sensor initialization completed\r\n");
 	return true;
 }
 

@@ -56,7 +56,6 @@ ms8607_pt_calib_t calib;
 bool ms8607_init(void)
 {
   ms8607_reset_pt(); // set once after power-on to make sure calibration PROM is loaded
-  printf("this is before if statement\r\n");
   if(HAL_I2C_IsDeviceReady(&ms8607_i2c, MS8607_PT_I2C_ADDR, 2, 1000) != HAL_OK){
 		printf("ERROR: Cannot initialize PTH Sensor. Device not ready (PT)");
 		return false;
@@ -68,7 +67,7 @@ bool ms8607_init(void)
   
 	// Read calibration data from PROM after power-on or reset
 	if(!ms8607_prom_read_all_addr_pt(&calib)) {
-		printf("ERROR: Failed to read PT PROM");
+		printf("ERROR: Failed to read PT PROM\r\n");
 		return false;
 	}
 //	log_debug(__func__, "crc & FD= %04X", calib.crc);
@@ -76,7 +75,7 @@ bool ms8607_init(void)
 //	log_debug(__func__, "c2 = %04X -> OFF", calib.off);
 //	log_debug(__func__, "c3 = %04X -> TCS", calib.tcs);
 //	log_debug(__func__, "c4 = %04X -> TCO", calib.tco);
-//	log_debug(__func__, "c5 = %04X -> TREF", calib.tref);
+//	printf("INFO: c5 = %04X -> TREF\r\n", calib.tref);
 //	log_debug(__func__, "c6 = %04X -> TEMPSENS", calib.tempsens);
   
   // Configure User Register
@@ -124,7 +123,7 @@ uint16_t ms8607_prom_read_one_addr_pt(uint8_t prom_addr)
 
 bool ms8607_prom_read_all_addr_pt(ms8607_pt_calib_t *calib)
 {
-	uint16_t temp[14];
+	uint16_t temp[8];
 	uint8_t crc_check;
 	uint8_t crc;
 	
@@ -135,17 +134,23 @@ bool ms8607_prom_read_all_addr_pt(ms8607_pt_calib_t *calib)
 	temp[4] = ms8607_prom_read_one_addr_pt(0xA8);
 	temp[5] = ms8607_prom_read_one_addr_pt(0xAA);
 	temp[6] = ms8607_prom_read_one_addr_pt(0xAC);
+//	printf("%04X\r\n%04X\r\n%04X\r\n%04X\r\n%04X\r\n%04X\r\n%04X\r\n",temp[0],temp[1],temp[2],
+//			temp[3],temp[4],temp[5],temp[6]);
 	
 	// check CRC
 	crc = ((temp[0] & 0xF000)>>12);
+//	printf("real crc= %4X\r\n",crc);
+
 	crc_check = ms8607_crc4_pt(temp);
-//	log_debug(__func__, "crc = %X | crc_check = %X", crc, crc_check);
-	
+
+//	printf("old crc= %4X\r\n",crc);
+
+//	printf("PT CRC (%02X) =? remainder (%02X)\r\n", crc, crc_check);
 	if(crc_check != crc) {
-		//L_ERROR("ERROR: PT CRC (%02X) does not match remainder (%02X)", crc, crc_check);
+		printf("ERROR: PT CRC (%02X) does not match remainder (%02X)\r\n", crc, crc_check);
 		return false;
 	} 
-	memcpy(calib, temp, sizeof(temp)+1);
+	memcpy(calib, temp, sizeof(temp));
 	return true;
 }
 
@@ -178,19 +183,19 @@ bool ms8607_get_pt(COT_DATA *data)
 	int32_t temp, pres;
 	
 	if(HAL_I2C_IsDeviceReady(&ms8607_i2c, MS8607_PT_I2C_ADDR, 2, 1000) != HAL_OK){
-		//L_ERROR("ERROR: PTH Sensor not ready (PT)");
+		printf("ERROR: PTH Sensor not ready (PT)");
 		return false;
 	}
 	
 	// Read digital pressure and temperature data
 	d1 = ms8607_read_adc_pt(MS8607_PT_OSR_D1_CMD);
 	d2 = ms8607_read_adc_pt(MS8607_PT_OSR_D2_CMD);
-//	log_debug(__func__, "P_ADC = %X", d1);
-//	log_debug(__func__, "T_ADC = %X", d2);
+//	printf("P_ADC = %X\r\n", d1);
+//	printf("T_ADC = %X\r\n", d2);
 	
 	// Calculate temperature
 	dT = (int32_t)d2 - ((int32_t)calib.tref << 8);
-//	log_debug(__func__, "dT = %d", dT);
+//	printf("dT = %d\r\n", dT);
 	temp = 2000 + (((int64_t)dT * (int64_t)calib.tempsens) >> 23);
 	
 //	data->pth.temperature  = (float)temp / 100;
@@ -368,14 +373,13 @@ uint16_t ms8607_prom_read_rh(uint8_t prom_addr)
 uint8_t ms8607_crc4_pt(uint16_t *n_prom) 	// n_prom defined as 8x unsigned int (n_prom[8])
 { 
 	uint8_t cnt; 																// simple counter
-	uint16_t n_rem=0; 													// crc remainder
+	uint16_t n_rem=0; 										// crc remainder
 	uint8_t n_bit;
 	uint16_t p0 = n_prom[0];
-	
-	n_prom[0]=((n_prom[0]) & 0x0FFF); 					// CRC byte is replaced by 0 
-	n_prom[7]=0;    														// Subsidiary value, set to 0
+	n_prom[0]=((n_prom[0]) & 0x0FFF); 						// CRC byte is replaced by 0
+	n_prom[7]=0;    										// Subsidiary value, set to 0
 	for (cnt = 0; cnt < 16; cnt++) 							// operation is performed on bytes
-	{ 																					// choose LSB or MSB
+	{ 														// choose LSB or MSB
 		if (cnt%2==1) 
 				n_rem ^= ((n_prom[cnt>>1]) & 0x00FF);
 		else 

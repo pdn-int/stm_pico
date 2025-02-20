@@ -63,7 +63,7 @@ bool max1704x_init(void) {
 
   }
 
-//	L_INFO("Fuel Gauge initialization completed");
+	printf("Fuel Gauge initialization completed\r\n");
 
 	return true;
 }
@@ -120,11 +120,11 @@ void max1704x_get_vcell(COT_DATA *data) {
 	HAL_I2C_Master_Transmit(&max1704x_i2c, MAX1704X_I2C_ADDR, wData, 1, 100);
 	HAL_StatusTypeDef hal_status = HAL_I2C_Master_Receive(&max1704x_i2c, MAX1704X_I2C_ADDR, rData, 2, 100);
 	if(hal_status != HAL_OK) {
-//		L_ERROR("ERROR: Cannot read VCELL from MAX17048 Fuel Gauge sensor %d", hal_status);
+		printf("ERROR: Cannot read VCELL from MAX17048 Fuel Gauge sensor %d", hal_status);
 		data->fgauge.vcell = 0;
 	} else {
-    data->fgauge.vcell = (((uint16_t)rData[0]<<8) + (uint16_t)rData[1]) * 78.125 / 1000000;
-//    L_DEBUG("VCELL = %f V (%02X, %02X)", data->fgauge.vcell, rData[0], rData[1]);
+		data->fgauge.vcell = (((uint16_t)rData[0]<<8) + (uint16_t)rData[1]) * 78.125 / 1000000;
+//		printf("VCELL = %f V (%02X, %02X)", data->fgauge.vcell, rData[0], rData[1]);
   }
 }
 

@@ -38,6 +38,7 @@ IC3Daemon ic3 = {0};
 #include "apds9250_light.h"
 #include "ms8607_pth.h"
 #include "max1704x_fuel_gauge.h"
+#include "lsm6dsl_accel_gyro.h"
 
 /* USER CODE END Includes */
 
@@ -77,8 +78,6 @@ static void MX_GPIO_Init(void);
 static void MX_I2C3_Init(void);
 static void MX_SPI5_Init(void);
 static void MX_UART8_Init(void);
-
-
 /* USER CODE BEGIN PFP */
 
 int __io_putchar (int ch)
@@ -134,17 +133,17 @@ int main(void)
   MX_SPI5_Init();
   MX_UART8_Init();
   /* USER CODE BEGIN 2 */
-  apds9250_init();
-  ms8607_init();
-  max1704x_init();
-  printf("after all init\r\n\n");
-
+  if(!apds9250_init()){printf("Fail to init apds9250\r\n\n");}
+  if(!ms8607_init()){printf("Fail to init ms86907\r\n\n");}
+  if(!max1704x_init()){printf("Fail to init max1704x\r\n\n");}
+  if(!lsm6dsl_init()){printf("Fail to init lsm6dsl\r\n\n");}
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   char* anm = "Hello world\r\n";
-  while (1)
+  uint8_t count = 4;
+  while (count)
   {
 	  max1704x_get_vcell(&data);
 	  max1704x_get_soc(&data);
@@ -152,17 +151,21 @@ int main(void)
 	  ms8607_get_pt(&data);
 	  ms8607_get_rh(&data);
 	  apds9250_get_rgb(&data);
+	  lsm6dsl_get_out_xl_g(&data);
+
 	  /* Read light sensor data */
 //	  APDS9250_ReadLight(&hi2c3, &red, &green, &blue, &clear);
 	  /* Read MS8607 sensor data */
 //	  MS8607_ReadSensor(&hi2c3, &temperature, &pressure, &humidity);
-	  printf("hello in main \r\n\n");
-	  /* Format and transmit sensor data over UART */
-	  printf("---------------\r\nVcell: %.2f, SOC: %.2f, Crate: %.2f, \r\n---------------\r\n",
+//	  printf("hello in main \r\n\n");
+//	  /* Format and transmit sensor data over UART */
+	  printf("---------------\r\GX: %.2f, GY: %.2f, GZ: %.2f\r\nXLX: %.2f, XLY: %.2f, XLZ: %.2f\r\n",
+			  data.xlgyr.gx, data.xlgyr.gy, data.xlgyr.gz, data.xlgyr.xlx, data.xlgyr.xly, data.xlgyr.xlz);
+	  printf("Vcell: %.2f, SOC: %.2f, Crate: %.2f\r\n",
 			  data.fgauge.vcell, data.fgauge.soc, data.fgauge.crate);
-	  printf("---------------\r\nTemp: %.2f C, P: %.2f hPa \r\nH: %.2f%%\r\n---------------\r\n",
+	  printf("Temp: %.2f C, P: %.2f hPa, H: %.2f\r\n",
 	  			  data.pth.temperature, data.pth.pressure, data.pth.humidity);
-	  printf("---------------\r\nR:%lu G:%lu B:%lu IR:%lu\r\n---------------\r\n",
+	  printf("R:%lu G:%lu B:%lu IR:%lu\r\n---------------\r\n",
 	  			  data.light.red, data.light.green, data.light.blue, data.light.ir);
 //	  HAL_UART_Transmit(&huart8, buf, strlen((char*)buf), HAL_MAX_DELAY);
 
@@ -173,6 +176,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	  count--;
   }
   /* USER CODE END 3 */
 }
@@ -294,16 +298,16 @@ static void MX_SPI5_Init(void)
   hspi5.Instance = SPI5;
   hspi5.Init.Mode = SPI_MODE_MASTER;
   hspi5.Init.Direction = SPI_DIRECTION_2LINES;
-  hspi5.Init.DataSize = SPI_DATASIZE_4BIT;
-  hspi5.Init.CLKPolarity = SPI_POLARITY_LOW;
+  hspi5.Init.DataSize = SPI_DATASIZE_8BIT;
+  hspi5.Init.CLKPolarity = SPI_POLARITY_HIGH;
   hspi5.Init.CLKPhase = SPI_PHASE_1EDGE;
-  hspi5.Init.NSS = SPI_NSS_HARD_OUTPUT;
+  hspi5.Init.NSS = SPI_NSS_SOFT;
   hspi5.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
   hspi5.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi5.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi5.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
   hspi5.Init.CRCPolynomial = 0x0;
-  hspi5.Init.NSSPMode = SPI_NSS_PULSE_ENABLE;
+  hspi5.Init.NSSPMode = SPI_NSS_PULSE_DISABLE;
   hspi5.Init.NSSPolarity = SPI_NSS_POLARITY_LOW;
   hspi5.Init.FifoThreshold = SPI_FIFO_THRESHOLD_01DATA;
   hspi5.Init.TxCRCInitializationPattern = SPI_CRC_INITIALIZATION_ALL_ZERO_PATTERN;
@@ -378,6 +382,7 @@ static void MX_UART8_Init(void)
   */
 static void MX_GPIO_Init(void)
 {
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
 /* USER CODE BEGIN MX_GPIO_Init_1 */
 /* USER CODE END MX_GPIO_Init_1 */
 
@@ -386,6 +391,16 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOK_CLK_ENABLE();
   __HAL_RCC_GPIOJ_CLK_ENABLE();
   __HAL_RCC_GPIOH_CLK_ENABLE();
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOK, GPIO_PIN_1, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin : PK1 */
+  GPIO_InitStruct.Pin = GPIO_PIN_1;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOK, &GPIO_InitStruct);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
