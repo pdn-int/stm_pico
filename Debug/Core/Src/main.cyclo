@@ -1,0 +1,10 @@
+../Core/Src/main.c:28:6:osDelay	1
+../Core/Src/main.c:84:5:__io_putchar	1
+../Core/Src/main.c:102:5:main	1
+../Core/Src/main.c:184:6:SystemClock_Config	4
+../Core/Src/main.c:235:13:MX_I2C3_Init	4
+../Core/Src/main.c:283:13:MX_SPI5_Init	2
+../Core/Src/main.c:331:13:MX_UART8_Init	5
+../Core/Src/main.c:379:13:MX_GPIO_Init	1
+../Core/Src/main.c:400:6:MPU_Config	1
+../Core/Src/main.c:431:6:Error_Handler	1
