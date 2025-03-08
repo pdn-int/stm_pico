@@ -39,6 +39,10 @@ IC3Daemon ic3 = {0};
 #include "ms8607_pth.h"
 #include "max1704x_fuel_gauge.h"
 #include "lsm6dsl_accel_gyro.h"
+#include "fuel_level_adc.h"
+//#include "ads1x1x.h"
+//#include "als_mpm_2f.h"
+
 
 /* USER CODE END Includes */
 
@@ -136,6 +140,10 @@ int main(void)
   MX_UART8_Init();
   MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
+
+
+  if(!Sensor_I2C1_Init()){printf("Fail to init i2c1 for als-mpm-2f\r\n\n");}
+
   if(!apds9250_init()){printf("Fail to init apds9250\r\n\n");}
   if(!ms8607_init()){printf("Fail to init ms86907\r\n\n");}
   if(!max1704x_init()){printf("Fail to init max1704x\r\n\n");}
@@ -144,8 +152,9 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  ic3.wdepth_resistor = 250;
   char* anm = "Hello world\r\n";
-  uint8_t count = 4;
+  uint8_t count = 1;
   while (count)
   {
 	  max1704x_get_vcell(&data);
@@ -155,21 +164,31 @@ int main(void)
 	  ms8607_get_rh(&data);
 	  apds9250_get_rgb(&data);
 	  lsm6dsl_get_out_xl_g(&data);
+	  wdepth_get_data(&data);
 
-	  /* Read light sensor data */
-//	  APDS9250_ReadLight(&hi2c3, &red, &green, &blue, &clear);
-	  /* Read MS8607 sensor data */
-//	  MS8607_ReadSensor(&hi2c3, &temperature, &pressure, &humidity);
-//	  printf("hello in main \r\n\n");
-//	  /* Format and transmit sensor data over UART */
-	  printf("---------------\r\GX: %.2f, GY: %.2f, GZ: %.2f\r\nXLX: %.2f, XLY: %.2f, XLZ: %.2f\r\n",
-			  data.xlgyr.gx, data.xlgyr.gy, data.xlgyr.gz, data.xlgyr.xlx, data.xlgyr.xly, data.xlgyr.xlz);
-	  printf("Vcell: %.2f, SOC: %.2f, Crate: %.2f\r\n",
-			  data.fgauge.vcell, data.fgauge.soc, data.fgauge.crate);
-	  printf("Temp: %.2f C, P: %.2f hPa, H: %.2f\r\n",
-	  			  data.pth.temperature, data.pth.pressure, data.pth.humidity);
-	  printf("R:%lu G:%lu B:%lu IR:%lu\r\n---------------\r\n",
-	  			  data.light.red, data.light.green, data.light.blue, data.light.ir);
+//	  float water_level = 0.0000f;
+//	  if(ALS_MPM2F_ReadLevel(&als_mpm2f, &water_level) == 0)
+//	  {
+//	      printf("Water Level: %.4f m\r\n", water_level);
+//	  }
+
+
+//	  ADS1x1x_start_conversion(&ads_config);
+//	  HAL_Delay(10);  // Wait for conversion to complete
+//	  int16_t adc_value = ADS1x1x_read(&ads_config);
+//	  printf("ADS1x1x ADC Value: %d\r\n", adc_value);
+
+	  /* Format and transmit sensor data over UART */
+	  printf("---------------\r\Wdepth V: %.2f, Wdepth A: %.5f, Wdepth depth: %.2f\r\n",
+	  			  data.wdepth.voltage, data.wdepth.current, data.wdepth.depth);
+//	  printf("---------------\r\GX: %.2f, GY: %.2f, GZ: %.2f\r\nXLX: %.2f, XLY: %.2f, XLZ: %.2f\r\n",
+//			  data.xlgyr.gx, data.xlgyr.gy, data.xlgyr.gz, data.xlgyr.xlx, data.xlgyr.xly, data.xlgyr.xlz);
+//	  printf("Vcell: %.2f, SOC: %.2f, Crate: %.2f\r\n",
+//			  data.fgauge.vcell, data.fgauge.soc, data.fgauge.crate);
+//	  printf("Temp: %.2f C, P: %.2f hPa, H: %.2f\r\n",
+//	  			  data.pth.temperature, data.pth.pressure, data.pth.humidity);
+//	  printf("R:%lu G:%lu B:%lu IR:%lu\r\n---------------\r\n",
+//	  			  data.light.red, data.light.green, data.light.blue, data.light.ir);
 //	  HAL_UART_Transmit(&huart8, buf, strlen((char*)buf), HAL_MAX_DELAY);
 
 //	  HAL_UART_Transmit(&huart8, anm, strlen(anm), HAL_MAX_DELAY);
@@ -179,7 +198,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  count--;
+//	  count--;
   }
   /* USER CODE END 3 */
 }

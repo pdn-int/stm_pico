@@ -75,6 +75,12 @@ typedef struct cot_flevel {
     float air;
 } COT_FLEVEL;
 
+typedef struct cot_wdepth { // water depth (als-mpm-2f)
+    float voltage;
+    float current;
+    float depth;
+} COT_WDEPTH;
+
 typedef struct cot_data {
     time_t startTime;
     time_t staleTime;
@@ -116,6 +122,8 @@ typedef struct cot_data {
     COT_FGAUGE fgauge;
     //Fuel Level Sensor
     COT_FLEVEL flevel;
+    //Water-depth sensor (ALS-MPM-2F Water level Transmitter)
+    COT_WDEPTH wdepth;
     //Power stats
     float bat_voltage;
     float charger_voltage;

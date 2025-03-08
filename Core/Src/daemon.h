@@ -259,6 +259,7 @@ typedef struct ic3daemon {
     // fuel level sensor
     bool flevel_enabled;
     float flevel_resistor;
+    float wdepth_resistor;
     
     // USB storage
     bool usb_storage;
